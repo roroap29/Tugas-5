@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <!-- font Concert One -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Concert+One&family=Fredoka&family=Lato:ital@1&display=swap"
+        rel="stylesheet">
+    <title>Game dengan JavaScript dan HTML5</title>
+    <style>
+        /*style universal untuk membuat seluruh halaman website tidak 
+        memiliki jarak tepi kanan kiri atas bawah*/
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        /*style untuk membuat halaman canvas*/
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-image: url(bg3.png);
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        /* style untuk penulisan tag h1 */
+        h1 {
+            font-size: 32px;
+            font-family: 'Concert One', cursive;
+            font-family: 'Fredoka', sans-serif;
+            font-family: 'Lato', sans-serif;
+            text-align: center;
+            margin: 50px auto;
+        }
+    </style>
+</head>
+
+<body>
+    <!--tag h1 yang memberitahukan game yang sedang dimainkan-->
+    <h1>Game Flappy Bird</h1>
+    <!--deklarasi tag canvas untuk membuat sebuah canvas pada halaman website
+    dengan lebar 500 dan tinggi 350-->
+    <canvas id="myCanvas" width="500" height="350"></canvas>
+    <script>
+        /*fungsi document.getElementById('myCanvas') tersebut digunakan untuk
+        memilih elemen HTML dengan id myCanvas*/
+        var canvas = document.getElementById('myCanvas');
+        /*variabel ctx(konteks) adalah objek dari canvas yang digunakan*/
+        var context = canvas.getContext('2d');
+
+        /*mendeklarasikan sebuah kecepatan kotak yang berada dalam canvas
+        dengan variabel 10*/
+        var speed = 10;
+        /*mendeklarasikan kecepatan game dengan variabel 100*/
+        gameSpeed = 100;
+        /*mendeklarasikan ukuran burung*/
+        var bird = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            vx: 0,
+            vy: 1
+        };
+
+        var pip = [];
+
+        /*mendeklarasikan variabel gravitasi sebesar 0.2*/
+        var gravity = 0.2;
+        /*mendeklarasikan variabel melambung sebesar 4*/
+        var bounce = 4;
+        /*mendeklarasikan variabel jarak sebesar 100*/
+        var distance = 100;
+        var dir = 'left';
+
+        /*document.onkeyup merupakan kunci untuk melepaskan fungsi(e)*/
+        document.onkeydown = function (e) {
+            if (!e) {
+                e = window.e;
+            }
+            var code = e.keyCode;
+            if (e.charCode && codee == 0) {
+                code = e.charCode;
+            }
+            switch (code) {
+                case 37://left
+                    if (dir != 'right')
+                        dir = 'left';
+                    break;
+                case 38:
+                    if (dir != 'down')
+                        dir = 'up';
+                    break;
+                case 39:
+                    if (dir != 'left')
+                        dir = 'right';
+                    break;
+                case 40:
+                    if (dir != 'up')
+                        dir = 'down';
+                    break;
+            }
+        }
+        var b = 0.8;
+
+        /*membuat fungsi baru yang bernama makeBird yang mana nanti
+        saat burung yang dimainkan kalah, maka burung akan hidup kembali*/
+        function makeBird() {
+            //canvas membuat burung baru
+            context.beginPath();
+            //mendefinisikan ukuran dari burung
+            context.rect(bird.x, bird.y, 15, 15);
+            //mendefinisikan burung yang berwana #2fb54c
+            context.fillStyle = '#2fb54c';
+            //membuat warna dari burung tersebut penuh
+            context.fill();
+            //membuat burung baru kembali dari titik awal
+            context.closePath();
+
+            bird.y += bird.vy;
+            bird.vy += gravity;
+            if (dir == 'up') {
+                bird.vy = -bounce;
+                dir = '';
+            }
+            if (bird.y + 10 >= canvas.height) {
+                //dir='up';
+            }
+        }
+
+        /*membuat fungsi baru yang bernama makePip yang merupakan dinding
+        atas-bawah dari game yang dimainkan*/
+        function makePip() {
+            for (p of pip) {
+                //canvas membuat dinding baru bagian atas
+                context.beginPath();
+                //mendefinisikan ukuran dari dinding bagian atas
+                context.rect(p.top.x, p.top.y, p.top.width, p.top.height);
+                //mendefinisikan dinding yang berwana #9e8008
+                context.fillStyle = '#9e8008';
+                //membuat warna dari dinding tersebut penuh
+                context.fill();
+                //membuat dinding baru bagian atas kembali dari titik awal
+                context.closePath();
+
+                p.bottom.y = p.top.height + distance;
+                p.bottom.height = (canvas.height - p.bottom.y);
+
+                //canvas membuat dinding baru bagian bawah
+                context.beginPath();
+                //mendefinisikan ukuran dari dinding bagian bawah
+                context.rect(p.bottom.x, p.bottom.y, p.bottom.width, p.bottom.height);
+                //mendefinisikan dinding yang berwana #9e8008
+                context.fillStyle = '#9e8008';
+                //membuat warna dari dinding tersebut penuh
+                context.fill();
+                //membuat dinding baru bagian bawah kembali dari titik awal
+                context.closePath();
+
+                p.bottom.x -= 1;
+                p.top.x -= 1;
+
+                if (p.top.x < -10) {
+                    pip.shift();
+                }
+
+                /*jika burung menabrak dinding bagian atas atau dinding
+                bagian bawah, maka akan muncul pemberitahuan mengenai skor
+                yang didapat, dan dinding juga akan diam ditempat*/
+                if (isCollideB(bird, p.bottom) || isCollideT(bird, p.top) || bird.y + 10 >= canvas.height) {
+                    alert('Your score : ' + score);
+                    window.location.reload();
+                }
+
+                //penghitungan skor 
+                if (score % 10 == 0) {
+                    console.log(distance);
+                    score += 1;
+                    distance -= 5;
+                }
+            }
+        }
+
+        /*membuat fungsi baru yang bernama isCollidB yang mana 
+        sintaks jika burung tertabrak dengan dinding bagian bawah*/
+        function isCollideB(b, p) {
+            return (
+                (b.x + 10 > p.x) &&
+                (b.x < p.x + 10) &&
+                (b.y > p.y || b.y + 10 > p.y)
+            );
+        }
+
+        /*membuat fungsi baru yang bernama isCollidT yang mana 
+        sintaks jika burung tertabrak dengan dinding bagian atas*/
+        function isCollideT(b, p) {
+            return (
+                (b.x + 10 > p.x) &&
+                (b.x < p.x + 10) &&
+                (b.y < p.y + p.height)
+            );
+        }
+
+        //membuat fungsi baru rnd untuk proses penghitungan
+        function rnd(min, max) {
+            var r = Math.round(Math.random() * (max - min) + min);
+            return (r - r % speed);
+        }
+
+        var score = 0;
+        var frame = 0;
+        (
+            /*membuat fungsi perulangan*/
+            function loop() {
+                requestAnimationFrame(function () {
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    if (frame % gameSpeed == 0) {
+                        pip.push({
+                            top: {
+                                x: canvas.width,
+                                y: 0,
+                                height: rnd(70, 140),
+                                width: 10,
+                            },
+                            bottom: {
+                                x: canvas.width,
+                                y: 0,
+                                height: rnd(100, 160),
+                                width: 10,
+                            }
+                        });
+                        score++;
+                    }
+                    makeBird();
+                    makePip();
+                    frame++;
+                    loop();
+                })
+            })
+            ();
+    </script>
+</body>
+
+</html>

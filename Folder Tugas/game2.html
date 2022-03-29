@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Gamedev Canvas Workshop</title>
+    <style>
+        /*style untuk membuat seluruh halaman website tidak memiliki 
+        jarak tepi kanan kiri atas bawah*/
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        /*style untuk membuat halaman canvas memiliki background putih
+        dengan display yang akan mengalir ke bawah dan margin : o auto
+        yang berarti bahwa atas bawah bernilai 0 dan kanan kiri otomatis
+        menyesuaikan ukuran*/
+        canvas {
+            background: #eee;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <!--deklarasi tag canvas untuk membuat sebuah canvas pada halaman website
+    dengan lebar 500 dan tinggi 350-->
+    <canvas id="myCanvas" width="500" height="350"></canvas>
+    <script>
+        /*fungsi document.getElementById('myCanvas') tersebut digunakan untuk
+        memilih elemen HTML dengan id myCanvas*/
+        var canvas = document.getElementById('myCanvas');
+        /*variabel ctx(konteks) adalah objek dari canvas yang digunakan*/
+        var context = canvas.getContext('2d');
+
+        /*mendeklarasikan sebuah kecepatan kotak yang berada dalam canvas
+        dengan variabel 10*/
+        var speed = 10;
+        /*mendeklarasikan kecepatan game dengan variabel 1*/
+        var gameSpeed = 1;
+
+        /*mendeklarasikan variabel me yang merupakan bullet dari game
+        yang berada ditengah canvas (untuk menjalankan permainan) */
+        var me = {
+            x: canvas.width / 2 - 5,
+            y: canvas.height / 2 - 5,
+            width: 10,
+            height: 10
+        }
+
+        var bullets = [];
+        /*mendeklarasikan variabel lebar dinding sebesar 200*/
+        var wallLength = 200;
+        /*mendeklarasikan variabel dinding dengan ketentuan seperti dibawah*/
+        var walls = {
+            /*pada dinding bagian kiri, memiliki variabel seperti pendeklarasian
+            dibawah*/
+            'left': {
+                x: 10,
+                y: canvas.height / 2 - wallLength / 2,
+                width: 10,
+                height: wallLength,
+                'pos': 'left'
+            },
+            /*pada dinding bagian kanan, memiliki variabel seperti pendeklarasian
+            dibawah*/
+            'right': {
+                x: canvas.width - 20,
+                y: canvas.height / 2 - wallLength / 2,
+                width: 10,
+                height: wallLength,
+                'pos': 'right'
+            },
+            /*pada dinding bagian atas, memiliki variabel seperti pendeklarasian
+            dibawah*/
+            'top': {
+                x: canvas.width / 2 - wallLength,
+                y: 10,
+                width: wallLength * 2,
+                height: 10,
+                'pos': 'top'
+            },
+            /*pada dinding bagian bawah, memiliki variabel seperti pendeklarasian
+            dibawah*/
+            'bottom': {
+                x: canvas.width / 2 - wallLength,
+                y: canvas.height - 20,
+                width: wallLength * 2,
+                height: 10,
+                'pos': 'bottom'
+            },
+        };
+
+        /*mendeklarasikan variabel gravitasi sebesar 0.2*/
+        var gravity = 0.2;
+        /*mendeklarasikan variabel melambung sebesar 4*/
+        var bounce = 4;
+        /*mendeklarasikan variabel jarak sebesar 70*/
+        var distance = 70;
+        var dir = '';
+
+        /*document.onkeyup merupakan kunci untuk melepaskan fungsi(e)*/
+        document.onkeyup = function (e) {
+            if (!e) {
+                e = window.e;
+            }
+            var code = e.keyCode;
+            if (e.charCode && codee == 0) {
+                code = e.charCode;
+            }
+            switch (code) {
+                case 37:
+                    if (dir != 'left')
+                        dir = 'left';
+                    bullets.push({
+                        x: me.x,
+                        y: me.y,
+                        width: 10,
+                        height: 10,
+                        dir: dir
+                    });
+                    break;
+                case 40:
+                    if (dir != 'down')
+                        dir = 'down';
+                    bullets.push({
+                        x: me.x,
+                        y: me.y,
+                        width: 10,
+                        height: 10,
+                        dir: dir
+                    });
+                    break;
+                case 39:
+                    if (dir != 'right')
+                        dir = 'right';
+                    bullets.push({
+                        x: me.x,
+                        y: me.y,
+                        width: 10,
+                        height: 10,
+                        dir: dir
+                    });
+                    break;
+                case 38:
+                    if (dir != 'up')
+                        dir = 'up';
+                    bullets.push({
+                        x: me.x,
+                        y: me.y,
+                        width: 10,
+                        height: 10,
+                        dir: dir
+                    });
+                    break;
+            }
+        }
+        /*variabel yang bernama wallSpeed mendifinisikan kecepatan dinding sebesar
+        0.2*/
+        var wallSpeed = 0.2;
+        /*variabel yang bernama wallSpeed mendifinisikan kecepatan dinding sebesar
+        20 jika dikenai bullet*/
+        var walletBackward = 20;
+        var score = 0;
+
+        //membuat fungsi baru bernama makeWaals yang mendefinisikan dinding
+        function makeWalls() {
+            for (var index in walls) {
+                var wall = walls[index];
+                //canvas membuat dinding baru
+                context.beginPath();
+                //mendefinisikan ukurang dinding
+                context.rect(wall.x, wall.y, wall.width, wall.height);
+                //mendefinisikan dinding memiliki warna biru
+                context.fillStyle = "blue";
+                //membuat warna dari dinding tersebut penuh
+                context.fill();
+                //membuat dinding kembali dari titik awal
+                context.closePath();
+                /*apabila dinding sebelah kiri jaraknya melewati titik tengah
+                maka akan kalah/loose*/
+                if (wall.pos == 'left') {
+                    wall.x += wallSpeed;
+                    if ((wall.x + wall.width) >= me.x) {
+                        loose();
+                    }
+                }
+                /*apabila dinding sebelah kanan jaraknya melewati titik tengah
+                maka akan kalah/loose*/
+                if (wall.pos == 'right') {
+                    wall.x -= wallSpeed;
+                    if ((wall.x + wall.width) <= me.x) {
+                        loose();
+                    }
+                }
+                /*apabila dinding sebelah atas jaraknya melewati titik tengah
+                maka akan kalah/loose*/
+                if (wall.pos == 'top') {
+                    wall.y += wallSpeed;
+                    if ((wall.y + wall.height) >= me.y) {
+                        loose();
+                    }
+                }
+                /*apabila dinding sebelah bawah jaraknya melewati titik tengah
+                maka akan kalah/loose*/
+                if (wall.pos == 'bottom') {
+                    wall.y -= wallSpeed;
+                    if ((wall.y + wall.height) <= me.y) {
+                        loose();
+                    }
+                }
+
+                console.log(walls[wall])
+
+
+            }
+        }
+        //menambahkan fungsi baru bernama loose jika pemain kalah
+        function loose() {
+            /*menampilkan pemberitahuan yang berisikan "You Lose!" disertai 
+            dengan jumlah skor pemain*/
+            alert('You Lose! score : ' + score);
+        }
+        //menonaktifkan fungsi collid/tabrakan
+        var collid = false;
+
+        //membuat fungsi baru bernama make Bullet untuk mendefinisikan sebuah peluru
+        function makeBullet() {
+            for (bullet of bullets) {
+                //membuat bullet baru
+                context.beginPath();
+                //mendefinisikan ukurang bullet
+                context.rect(bullet.x, bullet.y, bullet.width, bullet.height);
+                //memberi warna bullet peluru dengan warna merah
+                context.fillStyle = "red";
+                //membuat warna dari dinding tersebut penuh
+                context.fill();
+                //membuat bullet kembali ke titik awal
+                context.closePath();
+                /*jika key left ditekan saat menembakkan peluru maka bullet
+                peluru akan keluar dari titik tengah ke arah kiri*/
+                if (bullet.dir == 'left') {
+                    bullet.x -= 10;
+                }
+                /*jika key right ditekan saat menembakkan peluru maka bullet
+                peluru akan keluar dari titik tengah ke arah kanan*/
+                if (bullet.dir == 'right') {
+                    bullet.x += 10;
+                }
+                /*jika key up ditekan saat menembakkan peluru maka bullet
+                peluru akan keluar dari titik tengah ke arah atas*/
+                if (bullet.dir == 'up') {
+                    bullet.y -= 10;
+                }
+                /*jika key down ditekan saat menembakkan peluru maka bullet
+                peluru akan keluar dari titik tengah ke arah bawah*/
+                if (bullet.dir == 'down') {
+                    bullet.y += 10;
+                }
+                /*jika peluru ditembakkan, maka peluru akan keluar dari titik
+                tangah dan akan menghilang ketika peluru melebihi batas minimum
+                ukuran sebuah canvas yang sudah ditetapkan*/
+                if (bullet.x >= canvas.width || bullet.x <= 0 || bullet.y >= canvas.height || bullet.y <= 0) {
+                    bullets.splice(bullets.indexOf(bullet), 1);
+                }
+                /*jika peluru ditembakkan dari kanan, maka dinding akan ikut
+                bergeser ke kanan dan terjadi tabrakan oleh dinding dan peluru*/
+                if (bullet.dir == 'right') {
+                    if (bullet.x >= walls['right'].x) {
+                        walls['right'].x = walls['right'].x + walletBackward;
+                        collid = true;
+                    }
+                }
+                /*jika peluru ditembakkan dari atas, maka dinding akan ikut
+                bergeser ke atas dan terjadi tabrakan oleh dinding dan peluru*/
+                if (bullet.dir == 'up') {
+                    if (bullet.y <= walls['top'].y) {
+                        walls['top'].y = walls['top'].y - walletBackward;
+                        collid = true;
+                    }
+                }
+                /*jika peluru ditembakkan dari bawah, maka dinding akan ikut
+                bergeser ke bawah dan terjadi tabrakan oleh dinding dan peluru*/
+                if (bullet.dir == 'down') {
+                    if (bullet.y >= walls['bottom'].y) {
+                        walls['bottom'].y = walls['bottom'].y + walletBackward;
+                        collid = true;
+                    }
+                }
+                /*jika peluru ditembakkan dari kiri, maka dinding akan ikut
+                bergeser ke kiri dan terjadi tabrakan oleh dinding dan peluru*/
+                if (bullet.dir == 'left') {
+                    if (bullet.x <= walls['left'].x) {
+                        walls['left'].x = walls['left'].x - walletBackward;
+                        collid = true;
+                    }
+                }
+                /*jika dinding bertabrakan dengan bullet yang berada di tengah
+                maka skor akan bertambah*/
+                if (collid) {
+                    bullets.splice(bullets.indexOf(bullet), 1);
+                    collid = false;
+                    score++;
+                }
+
+
+            }
+        }
+
+        //membuat fungsi baru removeBullet
+        function removeBullet(index) {
+            bullets.splice(index, 1);
+        }
+
+        //membuat fungsi baru makeMe
+        function makeMe() {
+            context.beginPath();
+            context.rect(me.x, me.y, me.width, me.height);
+            context.fillStyle = "green";
+            context.fill();
+            context.closePath();
+        }
+
+        //membuat fungsi baru rnd untuk proses penghitungan
+        function rnd(min, max) {
+            var r = Math.round(Math.random() * (max - min) + min);
+            return (r - r % speed);
+        }
+        var wallPoses = ['left', 'right', 'top', 'bottom'];
+        var frame = 0;
+        (
+            //membuat fungsi baru untuk pengulangan
+            function loop() {
+                requestAnimationFrame(function () {
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    makeMe();
+                    makeBullet();
+                    makeWalls();
+                    if (score % 50 == 0) {
+                        walletBackward -= 1;
+                        wallSpeed += 0.1;
+                        score += 1;
+                        console.log(score);
+                        console.log(wallSpeed)
+                        console.log(walletBackward);
+                    }
+                    if (frame % gameSpeed == 0) {
+                        frame++
+                    }
+                    loop();
+                })
+            })();
+    </script>
+</body>
+
+</html>
